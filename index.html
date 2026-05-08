@@ -3,615 +3,699 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ENDORPHIN STUDIO</title>
+<title>PRTS // Endorphin Lab Terminal</title>
 <style>
   :root {
-    --bg-deep: #08080f;
-    --bg-panel: #0f0f18;
-    --border: rgba(255,255,255,0.06);
-    --border-glow: rgba(0,200,220,0.2);
-    --text-primary: #e8e8ec;
-    --text-secondary: #7a7a90;
-    --accent: #00c8dc;
-    --accent-dim: rgba(0,200,220,0.08);
-    --accent-gold: #c8a84e;
-    --warning: #e8553a;
-    --font-geo: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --bg-base: #08090d;
+    --bg-panel: #0c0e14;
+    --bg-card: #0f111a;
+    --border: #1a1c26;
+    --border-active: #2a2c38;
+    --text-primary: #c8cad4;
+    --text-secondary: #6e7080;
+    --text-dim: #4a4c56;
+    --accent: #e8983a;
+    --accent-dim: rgba(232,152,58,0.08);
+    --accent-glow: rgba(232,152,58,0.2);
+    --blue: #4a90d9;
+    --blue-dim: rgba(74,144,217,0.1);
+    --green: #5ab868;
+    --red: #d94a4a;
+    --red-glow: rgba(217,74,74,0.15);
+    --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+    --font-ui: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  html, body { height: 100%; }
 
   body {
-    font-family: var(--font-geo);
-    background: var(--bg-deep);
+    font-family: var(--font-ui);
+    background: var(--bg-base);
     color: var(--text-primary);
-    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── 全局噪点背景 ── */
+  /* ── 背景纹理 ── */
   body::before {
     content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% 0%, #0f1a2a 0%, var(--bg-deep) 70%);
-    z-index: -2;
+    position: fixed; inset: 0; z-index: -2;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(232,152,58,0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 80%, rgba(74,144,217,0.02) 0%, transparent 60%),
+      var(--bg-base);
   }
   body::after {
     content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L30 60M0 30L60 30' stroke='%23ffffff' stroke-width='0.15' opacity='0.04' /%3E%3C/svg%3E");
-    background-size: 60px 60px;
-    z-index: -1;
-    pointer-events: none;
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+      url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='40' height='40' fill='none' stroke='%23ffffff' stroke-width='0.12' opacity='0.03'/%3E%3C/svg%3E");
+    background-size: 40px 40px;
   }
 
-  /* ── 扫描线效果 ── */
+  /* ── 全局扫描线 ── */
   .scanlines {
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.03) 2px,
-      rgba(0,0,0,0.03) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
+    position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
   }
 
-  /* ── 导航栏 ── */
-  .nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 48px;
-    height: 64px;
-    transition: background 0.35s, backdrop-filter 0.35s;
-  }
-  .nav.scrolled {
-    background: rgba(8,8,15,0.85);
-    backdrop-filter: blur(20px) saturate(1.4);
+  /* ═════════════ 顶部状态栏 ═════════════ */
+  .top-bar {
+    height: 28px;
+    background: #0a0b10;
     border-bottom: 1px solid var(--border);
-  }
-  .nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-  }
-  .nav-logo .mark {
-    width: 32px; height: 32px;
-    border: 1.5px solid var(--accent);
-    border-radius: 2px;
-    background: var(--accent-dim);
-    position: relative;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .nav-logo .mark::after {
-    content: '';
-    width: 8px; height: 8px;
-    background: var(--accent);
-    /* center via display:flex on parent */
-  }
-  .nav-logo .wordmark {
-    font-size: 16px; font-weight: 600; letter-spacing: 0.15em;
-    color: var(--text-primary);
-  }
-  .nav-links {
-    display: flex; gap: 36px; list-style: none;
-  }
-  .nav-links a {
-    color: var(--text-secondary); text-decoration: none;
-    font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
-    transition: color 0.25s; position: relative;
-  }
-  .nav-links a::after {
-    content: '';
-    position: absolute; bottom: -4px; left: 0; right: 0;
-    height: 1px; background: var(--accent);
-    transform: scaleX(0); transition: transform 0.25s;
-  }
-  .nav-links a:hover { color: #fff; }
-  .nav-links a:hover::after { transform: scaleX(1); }
-
-  /* ── Hero 区域 ── */
-  .hero {
-    min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center;
-    position: relative; padding: 120px 24px 80px;
-  }
-  .hero-geo {
-    position: absolute; inset: 0;
-    pointer-events: none; overflow: hidden;
-  }
-  /* 大几何圆环 */
-  .hero-geo .ring {
-    position: absolute;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 50%;
-  }
-  .hero-geo .ring:nth-child(1) {
-    width: 600px; height: 600px;
-    top: 50%; left: 50%; transform: translate(-50%,-55%);
-  }
-  .hero-geo .ring:nth-child(2) {
-    width: 400px; height: 400px;
-    top: 50%; left: 50%; transform: translate(-50%,-55%);
-    border-color: rgba(0,200,220,0.1);
-  }
-  /* 角标装饰 */
-  .corner-deco {
-    position: absolute; width: 60px; height: 60px;
-    border-color: rgba(255,255,255,0.12); border-style: solid;
-  }
-  .corner-tl { top: 24px; left: 24px; border-width: 1px 0 0 1px; }
-  .corner-tr { top: 24px; right: 24px; border-width: 1px 1px 0 0; }
-  .corner-bl { bottom: 24px; left: 24px; border-width: 0 0 1px 1px; }
-  .corner-br { bottom: 24px; right: 24px; border-width: 0 1px 1px 0; }
-
-  .hero-content { text-align: center; position: relative; z-index: 1; }
-  .hero-eyebrow {
-    font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 24px;
-  }
-  .hero-title {
-    font-size: clamp(42px, 7vw, 80px);
-    font-weight: 200; letter-spacing: 0.15em;
-    line-height: 1.1; color: #fff;
-  }
-  .hero-title b { font-weight: 600; color: var(--accent); }
-  .hero-sub {
-    margin-top: 24px; font-size: 16px; color: var(--text-secondary);
-    letter-spacing: 0.05em; max-width: 480px;
-  }
-  .hero-cta {
-    margin-top: 48px;
-    display: inline-flex; align-items: center; gap: 12px;
-    padding: 14px 36px;
-    border: 1px solid var(--border-glow);
-    background: var(--accent-dim);
-    color: var(--accent); text-decoration: none;
-    font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase;
-    transition: all 0.3s;
-  }
-  .hero-cta:hover {
-    background: rgba(0,200,220,0.15);
-    border-color: var(--accent);
-    box-shadow: 0 0 30px rgba(0,200,220,0.15);
-  }
-  .hero-cta .arrow { transition: transform 0.3s; }
-  .hero-cta:hover .arrow { transform: translateY(3px); }
-
-  /* 下方滚动提示 */
-  .scroll-hint {
-    position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    animation: float 2.5s ease-in-out infinite;
-  }
-  .scroll-hint span { font-size: 10px; letter-spacing: 0.2em; color: var(--text-secondary); }
-  .scroll-hint .line {
-    width: 1px; height: 32px;
-    background: linear-gradient(to bottom, var(--accent), transparent);
-  }
-  @keyframes float {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(8px); }
-  }
-
-  /* ── 通用区块 ── */
-  section { padding: 120px 48px; position: relative; }
-  .section-label {
-    font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 16px;
-  }
-  .section-title {
-    font-size: clamp(28px, 4vw, 42px);
-    font-weight: 200; letter-spacing: 0.08em;
-    margin-bottom: 48px;
-  }
-
-  /* ── 分隔线 ── */
-  .divider {
-    width: 60px; height: 1px; background: var(--accent);
-    opacity: 0.4; margin: 0 0 48px;
-  }
-
-  /* ── About 区域 ── */
-  .about-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 48px; max-width: 1100px;
-  }
-  .about-visual {
-    position: relative;
-    min-height: 300px;
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .about-visual .deco-box {
-    width: 80px; height: 80px;
-    border: 1px solid rgba(0,200,220,0.25);
-    position: relative;
-  }
-  .about-visual .deco-box::after {
-    content: '';
-    position: absolute; top: 12px; left: 12px;
-    width: 100%; height: 100%;
-    border: 1px solid rgba(0,200,220,0.1);
-  }
-  .about-text p {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 0 16px; font-size: 11px;
+    font-family: var(--font-mono);
     color: var(--text-secondary);
-    font-size: 15px; line-height: 1.9;
-    margin-bottom: 20px;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
   }
-  .about-text p:last-child { margin-bottom: 0; }
-  .stat-row {
-    display: flex; gap: 48px; margin-top: 36px;
-  }
-  .stat-item .num {
-    font-size: 32px; font-weight: 200; color: #fff;
-    letter-spacing: 0.05em;
-  }
-  .stat-item .lbl {
-    font-size: 12px; color: var(--text-secondary);
-    letter-spacing: 0.1em; margin-top: 4px;
+  .top-bar .sys-id { color: var(--accent); }
+  .top-bar .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); display: inline-block;
+    margin-right: 6px;
+    box-shadow: 0 0 6px rgba(90,184,104,0.5);
   }
 
-  /* ── Projects 区域 ── */
-  .projects-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 24px; max-width: 1100px;
+  /* ═════════════ 主体布局 ═════════════ */
+  .main-grid {
+    display: flex; flex: 1; min-height: 0;
   }
-  .project-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    padding: 40px 32px;
-    transition: border-color 0.4s, box-shadow 0.4s, transform 0.4s;
-    cursor: default;
-    position: relative; overflow: hidden;
+
+  /* ── 左侧导航栏 ── */
+  .sidebar {
+    width: 200px; flex-shrink: 0;
+    background: #0a0b10;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 16px 0;
   }
-  .project-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0; transition: opacity 0.4s;
-  }
-  .project-card:hover {
-    border-color: var(--border-glow);
-    box-shadow: 0 12px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,200,220,0.06);
-    transform: translateY(-4px);
-  }
-  .project-card:hover::before { opacity: 1; }
-  .project-card .p-index {
-    font-size: 11px; letter-spacing: 0.15em; color: var(--accent);
-    margin-bottom: 20px;
-  }
-  .project-card .p-icon {
-    width: 48px; height: 48px;
-    border: 1px solid rgba(255,255,255,0.1);
-    margin-bottom: 24px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-  }
-  .project-card h3 {
-    font-size: 20px; font-weight: 400; letter-spacing: 0.05em;
+  .sidebar-header {
+    padding: 8px 20px 20px;
+    border-bottom: 1px solid var(--border);
     margin-bottom: 12px;
   }
-  .project-card p {
+  .sidebar-header .logo-icon {
+    width: 36px; height: 36px;
+    border: 1px solid var(--accent);
+    margin-bottom: 12px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sidebar-header .logo-icon::after {
+    content: ''; width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 10px solid var(--accent);
+  }
+  .sidebar-header .sys-name {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.12em;
+    color: #fff;
+  }
+  .sidebar-header .sys-ver {
+    font-size: 10px; color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+  .sidebar-nav { flex: 1; }
+  .sidebar-nav .nav-section {
+    padding: 0 20px; margin-bottom: 16px;
+  }
+  .sidebar-nav .nav-section-title {
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.15em; color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .sidebar-nav .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; margin: 1px 8px;
     font-size: 13px; color: var(--text-secondary);
-    line-height: 1.7;
+    cursor: pointer; transition: all 0.2s;
+    border-left: 2px solid transparent;
+    letter-spacing: 0.04em;
+  }
+  .sidebar-nav .nav-item:hover { color: #fff; background: rgba(255,255,255,0.02); }
+  .sidebar-nav .nav-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .nav-item .nav-dot {
+    width: 6px; height: 6px; border: 1px solid currentColor;
+  }
+  .sidebar-footer {
+    padding: 12px 20px; border-top: 1px solid var(--border);
+    font-size: 10px; color: var(--text-dim);
+    font-family: var(--font-mono);
   }
 
-  /* ── News 区域 ── */
-  .news-list {
-    max-width: 800px; list-style: none;
+  /* ── 主内容区 ── */
+  .content {
+    flex: 1; padding: 16px;
+    display: flex; flex-direction: column;
+    gap: 12px; overflow-y: auto;
   }
-  .news-item {
-    display: flex; gap: 32px; align-items: center;
-    padding: 28px 0;
+
+  /* ── 面包屑 ── */
+  .breadcrumb {
+    font-size: 11px; color: var(--text-dim);
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+  }
+  .breadcrumb span { color: var(--accent); }
+
+  /* ── 面板通用样式 ── */
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--border);
-    transition: padding-left 0.3s, border-color 0.3s;
+    font-size: 11px; letter-spacing: 0.08em;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.2);
+  }
+  .panel-header .panel-title { color: #fff; font-weight: 500; }
+  .panel-header .panel-actions {
+    display: flex; gap: 12px; font-size: 10px; color: var(--text-dim);
+  }
+  .panel-body { padding: 14px; }
+
+  /* ── 面板边角装饰 ── */
+  .panel::before, .panel::after {
+    content: ''; position: absolute; width: 12px; height: 12px;
+    pointer-events: none; z-index: 2;
+  }
+  .panel::before { top: -1px; left: -1px; border-top: 1px solid rgba(232,152,58,0.3); border-left: 1px solid rgba(232,152,58,0.3); }
+  .panel::after { top: -1px; right: -1px; border-top: 1px solid rgba(232,152,58,0.3); border-right: 1px solid rgba(232,152,58,0.3); }
+  .panel-body::before, .panel-body::after {
+    content: ''; position: absolute; width: 12px; height: 12px;
+    pointer-events: none; z-index: 2;
+  }
+  .panel-body::before { bottom: -1px; left: -1px; border-bottom: 1px solid rgba(232,152,58,0.3); border-left: 1px solid rgba(232,152,58,0.3); }
+  .panel-body::after { bottom: -1px; right: -1px; border-bottom: 1px solid rgba(232,152,58,0.3); border-right: 1px solid rgba(232,152,58,0.3); }
+
+  /* ── 仪表盘行布局 ── */
+  .dashboard-row {
+    display: grid; gap: 12px;
+  }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .row-2-1 { grid-template-columns: 2fr 1fr; }
+  .row-1-2 { grid-template-columns: 1fr 2fr; }
+
+  /* ── 状态总览卡片 ── */
+  .status-cards {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  .status-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 14px;
+  }
+  .status-card .sc-label {
+    font-size: 10px; letter-spacing: 0.1em;
+    color: var(--text-dim); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .status-card .sc-value {
+    font-size: 28px; font-weight: 200; color: #fff;
+    font-family: var(--font-mono); letter-spacing: 0.04em;
+  }
+  .status-card .sc-sub {
+    font-size: 11px; color: var(--text-secondary); margin-top: 4px;
+  }
+  .status-card.warn { border-color: rgba(232,152,58,0.3); }
+  .status-card.warn .sc-value { color: var(--accent); }
+  .status-card.ok { border-color: rgba(90,184,104,0.2); }
+  .status-card.ok .sc-value { color: var(--green); }
+  .status-card.err { border-color: rgba(217,74,74,0.2); }
+  .status-card.err .sc-value { color: var(--red); }
+
+  /* ── 数据表格 ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    text-align: left; padding: 8px 12px;
+    font-weight: 400; color: var(--text-dim);
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-family: var(--font-mono); font-size: 12px;
+  }
+  .data-table tr:hover td { background: rgba(255,255,255,0.01); }
+  .data-table .id-cell { color: var(--accent); }
+  .tag {
+    display: inline-block; padding: 2px 8px; font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+  .tag-active { border: 1px solid rgba(90,184,104,0.4); color: var(--green); background: rgba(90,184,104,0.06); }
+  .tag-pending { border: 1px solid rgba(232,152,58,0.4); color: var(--accent); background: rgba(232,152,58,0.06); }
+  .tag-idle { border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
+
+  /* ── 进度条 ── */
+  .progress-bar {
+    height: 4px; background: rgba(255,255,255,0.04);
+    position: relative; margin-top: 4px;
+  }
+  .progress-bar .fill {
+    height: 100%; transition: width 0.6s;
+  }
+  .fill-orange { background: var(--accent); }
+  .fill-blue { background: var(--blue); }
+  .fill-green { background: var(--green); }
+
+  /* ── 日志列表 ── */
+  .log-list { list-style: none; font-family: var(--font-mono); font-size: 11px; }
+  .log-list li {
+    padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.02);
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .log-time { color: var(--text-dim); white-space: nowrap; min-width: 52px; }
+  .log-msg { color: var(--text-secondary); flex: 1; }
+  .log-list li.warn .log-msg { color: var(--accent); }
+  .log-list li.err .log-msg { color: var(--red); }
+
+  /* ── 六边形网格 ── */
+  .hex-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .hex-item {
+    aspect-ratio: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 12px;
+    transition: border-color 0.3s, box-shadow 0.3s;
     cursor: default;
   }
-  .news-item:hover {
-    padding-left: 16px;
-    border-bottom-color: rgba(0,200,220,0.2);
+  .hex-item:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-dim);
   }
-  .news-date {
-    font-size: 11px; letter-spacing: 0.15em;
-    color: var(--text-secondary);
-    white-space: nowrap; min-width: 90px;
+  .hex-item .hex-icon {
+    width: 40px; height: 40px;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 8px; font-size: 18px;
   }
-  .news-tag {
-    font-size: 10px; letter-spacing: 0.1em;
-    padding: 3px 10px;
-    border: 1px solid var(--border);
-    color: var(--accent); white-space: nowrap;
+  .hex-item .hex-label {
+    font-size: 11px; color: var(--text-secondary);
+    letter-spacing: 0.04em;
   }
-  .news-title {
-    font-size: 15px; letter-spacing: 0.03em;
-    flex: 1;
-  }
-  .news-arrow {
-    color: var(--text-secondary); font-size: 18px;
-    transition: transform 0.3s, color 0.3s;
-  }
-  .news-item:hover .news-arrow {
-    transform: translateX(6px); color: var(--accent);
+  .hex-item .hex-val {
+    font-size: 16px; font-family: var(--font-mono);
+    color: #fff; margin-top: 2px;
   }
 
-  /* ── Contact / Footer ── */
-  .footer-section {
-    text-align: center; padding: 120px 48px 64px;
-  }
-  .footer-section .hero-eyebrow { margin-bottom: 8px; }
-  .footer-section .section-title { margin-bottom: 16px; }
-  .footer-section > p {
-    color: var(--text-secondary); font-size: 15px;
-    margin-bottom: 48px;
-  }
-  .contact-links {
-    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
-    margin-bottom: 80px;
-  }
-  .contact-btn {
-    padding: 12px 28px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: transparent;
-    color: var(--text-primary);
-    font-size: 13px; letter-spacing: 0.08em;
-    text-decoration: none;
-    transition: all 0.3s;
-  }
-  .contact-btn:hover {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-    box-shadow: 0 0 24px rgba(0,200,220,0.08);
-  }
-  .footer-bar {
-    display: flex; justify-content: space-between;
-    align-items: center;
-    padding-top: 32px;
+  /* ── 底部状态栏 ── */
+  .bottom-bar {
+    height: 24px;
+    background: #0a0b10;
     border-top: 1px solid var(--border);
-    max-width: 1100px; margin: 0 auto;
-    font-size: 12px; color: var(--text-secondary);
-    letter-spacing: 0.05em;
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-size: 10px; font-family: var(--font-mono);
+    color: var(--text-dim); letter-spacing: 0.04em;
+    flex-shrink: 0;
   }
+  .bottom-bar .blink {
+    animation: blink 1.4s step-end infinite;
+    color: var(--accent);
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── 窗口控件按钮组 ── */
+  .win-ctrls {
+    display: flex; gap: 6px;
+  }
+  .win-ctrl {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .win-ctrl.c1 { background: rgba(217,74,74,0.4); }
+  .win-ctrl.c2 { background: rgba(232,152,58,0.4); }
+  .win-ctrl.c3 { background: rgba(90,184,104,0.4); }
 
   /* ── 响应式 ── */
-  @media (max-width: 768px) {
-    .nav { padding: 0 24px; }
-    .nav-links { display: none; }
-    .hero { padding: 80px 24px 60px; }
-    section { padding: 72px 24px; }
-    .about-grid { grid-template-columns: 1fr; }
-    .projects-grid { grid-template-columns: 1fr; }
-    .stat-row { gap: 32px; }
-    .news-item { flex-wrap: wrap; gap: 8px; }
-    .footer-bar { flex-direction: column; gap: 8px; }
-    .corner-deco { display: none; }
+  @media (max-width: 1024px) {
+    .sidebar { width: 160px; }
+    .row-3, .row-2, .row-2-1, .row-1-2 { grid-template-columns: 1fr; }
+    .status-cards { grid-template-columns: repeat(2, 1fr); }
   }
-
-  /* ── 入场动画 ── */
-  .fade-in {
-    opacity: 0; transform: translateY(32px);
-    transition: opacity 0.8s, transform 0.8s;
+  @media (max-width: 640px) {
+    .sidebar { display: none; }
+    .status-cards { grid-template-columns: 1fr; }
+    .content { padding: 8px; }
+    .top-bar, .bottom-bar { padding: 0 8px; font-size: 9px; }
   }
-  .fade-in.visible { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
 <div class="scanlines"></div>
 
-<!-- 导航栏 -->
-<nav class="nav" id="nav">
-  <a href="#" class="nav-logo">
-    <div class="mark"></div>
-    <span class="wordmark">ENDORPHIN</span>
-  </a>
-  <ul class="nav-links">
-    <li><a href="#about">About</a></li>
-    <li><a href="#projects">Projects</a></li>
-    <li><a href="#news">News</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ul>
-</nav>
-
-<!-- Hero -->
-<section class="hero" id="hero">
-  <div class="hero-geo">
-    <div class="ring"></div>
-    <div class="ring"></div>
-    <div class="corner-deco corner-tl"></div>
-    <div class="corner-deco corner-tr"></div>
-    <div class="corner-deco corner-bl"></div>
-    <div class="corner-deco corner-br"></div>
+<!-- ═══════════ 顶部状态栏 ═══════════ -->
+<div class="top-bar">
+  <div>
+    <span class="status-dot"></span>
+    <span class="sys-id">PRTS v4.7.1</span>
+    <span style="margin-left:16px;">SYS.OK</span>
+    <span style="margin-left:16px;">UPTIME 127:22:41</span>
   </div>
-
-  <div class="hero-content fade-in">
-    <p class="hero-eyebrow">Research · Create · Deliver</p>
-    <h1 class="hero-title">
-      为创造而生的<br><b>数字工作室</b>
-    </h1>
-    <p class="hero-sub">
-      我们致力于探索计算机图形学、人工智能与交互技术的边界，
-      将前沿研究转化为引人入胜的数字体验。
-    </p>
-    <a href="#projects" class="hero-cta">
-      探索作品 <span class="arrow">&darr;</span>
-    </a>
+  <div>
+    <span>LAT 31.23°N</span>
+    <span style="margin-left:16px;">LNG 121.47°E</span>
+    <span style="margin-left:16px;color:var(--accent);">NET SECURE</span>
   </div>
+</div>
 
-  <div class="scroll-hint">
-    <span>SCROLL</span>
-    <div class="line"></div>
-  </div>
-</section>
+<!-- ═══════════ 主体 ═══════════ -->
+<div class="main-grid">
 
-<!-- About -->
-<section id="about">
-  <p class="section-label">01 / About</p>
-  <div class="divider"></div>
-  <div class="about-grid">
-    <div class="about-visual fade-in">
-      <div class="deco-box"></div>
+  <!-- 左侧导航 -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-icon"></div>
+      <div class="sys-name">ENDORPHIN</div>
+      <div class="sys-ver">TERMINAL // REV 4.7</div>
     </div>
-    <div class="about-text fade-in">
-      <p>
-        <strong style="color:#fff;font-weight:500;">Endorphin Studio</strong>
-        成立于 2024 年，是一支专注于计算机图形学、程序化内容生成（PCG）
-        与大语言模型智能体（LLM Agents）交叉领域的研究型团队。
-      </p>
-      <p>
-        我们相信技术应当服务于创造力。从 3D 场景合成到全沉浸式虚拟现实，
-        我们的每一项工作都致力于模糊"工具"与"艺术"之间的边界。
-      </p>
-      <div class="stat-row">
-        <div class="stat-item">
-          <div class="num">3+</div>
-          <div class="lbl">研究方向</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Operations</div>
+        <div class="nav-item active"><span class="nav-dot"></span> 仪表盘</div>
+        <div class="nav-item"><span class="nav-dot"></span> 任务控制</div>
+        <div class="nav-item"><span class="nav-dot"></span> 数据日志</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Research</div>
+        <div class="nav-item"><span class="nav-dot"></span> PCG 引擎</div>
+        <div class="nav-item"><span class="nav-dot"></span> Agent 运行时</div>
+        <div class="nav-item"><span class="nav-dot"></span> 3D 合成管线</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">System</div>
+        <div class="nav-item"><span class="nav-dot"></span> 配置</div>
+        <div class="nav-item"><span class="nav-dot"></span> 诊断</div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">AUTH :: ENDORPH1NWW</div>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="content">
+
+    <!-- 面包屑 -->
+    <div class="breadcrumb">ROOT / <span>DASHBOARD</span> / OVERVIEW</div>
+
+    <!-- 状态卡片行 -->
+    <div class="status-cards">
+      <div class="status-card ok">
+        <div class="sc-label">Active Agents</div>
+        <div class="sc-value">12</div>
+        <div class="sc-sub">全部正常运行</div>
+      </div>
+      <div class="status-card warn">
+        <div class="sc-label">GPU 利用率</div>
+        <div class="sc-value">78<span style="font-size:16px;">%</span></div>
+        <div class="sc-sub">3/4 节点满载</div>
+        <div class="progress-bar"><div class="fill fill-orange" style="width:78%"></div></div>
+      </div>
+      <div class="status-card">
+        <div class="sc-label">场景生成队列</div>
+        <div class="sc-value">47</div>
+        <div class="sc-sub">预估剩余 2.3h</div>
+      </div>
+      <div class="status-card err">
+        <div class="sc-label">告警</div>
+        <div class="sc-value">3</div>
+        <div class="sc-sub">2 WARN / 1 CRIT</div>
+      </div>
+    </div>
+
+    <!-- 主面板行：任务列表 + 系统日志 -->
+    <div class="dashboard-row row-2">
+      <!-- 任务列表 -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">&#9632; 活跃任务列表</span>
+          <span class="panel-actions">
+            <span>[ FILTER ]</span>
+            <span>[ EXPORT ]</span>
+            <span class="win-ctrls">
+              <span class="win-ctrl c1"></span><span class="win-ctrl c2"></span><span class="win-ctrl c3"></span>
+            </span>
+          </span>
         </div>
-        <div class="stat-item">
-          <div class="num">∞</div>
-          <div class="lbl">探索可能</div>
+        <div class="panel-body" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr><th>ID</th><th>任务名称</th><th>类型</th><th>状态</th><th>进度</th><th>ETA</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="id-cell">T-1042</td><td>地形生成 · 阿尔法区域</td><td>PCG</td>
+                <td><span class="tag tag-active">RUNNING</span></td>
+                <td>
+                  67%
+                  <div class="progress-bar"><div class="fill fill-green" style="width:67%"></div></div>
+                </td>
+                <td>00:14:22</td>
+              </tr>
+              <tr>
+                <td class="id-cell">T-1041</td><td>NPC 行为树编译</td><td>AGENT</td>
+                <td><span class="tag tag-active">RUNNING</span></td>
+                <td>
+                  91%
+                  <div class="progress-bar"><div class="fill fill-blue" style="width:91%"></div></div>
+                </td>
+                <td>00:03:08</td>
+              </tr>
+              <tr>
+                <td class="id-cell">T-1040</td><td>3D 资产风格迁移</td><td>SYNTH</td>
+                <td><span class="tag tag-pending">QUEUED</span></td>
+                <td>
+                  --
+                  <div class="progress-bar"><div class="fill fill-orange" style="width:0%"></div></div>
+                </td>
+                <td>--:--:--</td>
+              </tr>
+              <tr>
+                <td class="id-cell">T-1039</td><td>扩散模型微调 · Batch 12</td><td>TRAIN</td>
+                <td><span class="tag tag-pending">QUEUED</span></td>
+                <td>
+                  --
+                  <div class="progress-bar"><div class="fill fill-orange" style="width:0%"></div></div>
+                </td>
+                <td>--:--:--</td>
+              </tr>
+              <tr>
+                <td class="id-cell">T-1038</td><td>场景图验证</td><td>TEST</td>
+                <td><span class="tag tag-idle">COMPLETED</span></td>
+                <td>
+                  100%
+                  <div class="progress-bar"><div class="fill fill-green" style="width:100%"></div></div>
+                </td>
+                <td>DONE</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="stat-item">
-          <div class="num">100%</div>
-          <div class="lbl">开源精神</div>
+      </div>
+
+      <!-- 系统日志 -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">&#9632; 系统日志</span>
+          <span class="panel-actions">
+            <span>[ LIVE ]</span>
+            <span class="win-ctrls">
+              <span class="win-ctrl c1"></span><span class="win-ctrl c2"></span><span class="win-ctrl c3"></span>
+            </span>
+          </span>
+        </div>
+        <div class="panel-body">
+          <ul class="log-list">
+            <li><span class="log-time">14:22:07</span><span class="log-msg">[INFO] PCG terrain chunk #A12 generated in 1.4s</span></li>
+            <li><span class="log-time">14:21:55</span><span class="log-msg">[INFO] Agent node <RHODES-7> completed reasoning cycle</span></li>
+            <li class="warn"><span class="log-time">14:21:42</span><span class="log-msg">[WARN] GPU#3 temperature exceeded threshold (82°C)</span></li>
+            <li><span class="log-time">14:21:30</span><span class="log-msg">[INFO] Diffusion model checkpoint saved: ckpt-12800.pt</span></li>
+            <li><span class="log-time">14:21:18</span><span class="log-msg">[INFO] Scene graph validation passed for zone B7</span></li>
+            <li class="err"><span class="log-time">14:21:05</span><span class="log-msg">[CRIT] Texture streaming pool exhausted (4096/4096 MB)</span></li>
+            <li><span class="log-time">14:20:52</span><span class="log-msg">[INFO] Auto-scaling: +1 compute node provisioned</span></li>
+            <li><span class="log-time">14:20:40</span><span class="log-msg">[INFO] Style transfer pipeline initialized for Batch#12</span></li>
+            <li><span class="log-time">14:20:33</span><span class="log-msg">[INFO] NPC behavior tree validation: 2048/2048 nodes OK</span></li>
+            <li><span class="log-time">14:20:19</span><span class="log-msg">[INFO] Cron job <nightly-cleanup> completed successfully</span></li>
+          </ul>
         </div>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- Projects -->
-<section id="projects">
-  <p class="section-label">02 / Projects</p>
-  <div class="divider"></div>
-  <h2 class="section-title">研究领域</h2>
-  <div class="projects-grid">
-    <div class="project-card fade-in">
-      <div class="p-index">01</div>
-      <div class="p-icon">&#9670;</div>
-      <h3>程序化内容生成</h3>
-      <p>
-        探索基于规则与机器学习的 PCG 算法，
-        实现大规模 3D 场景的自动化构建与风格化控制。
-      </p>
-    </div>
-    <div class="project-card fade-in">
-      <div class="p-index">02</div>
-      <div class="p-icon">&#9644;</div>
-      <h3>LLM Agents</h3>
-      <p>
-        构建具备自主规划与工具调用能力的大语言模型智能体，
-        应用于游戏 NPC 行为与自动化内容管线。
-      </p>
-    </div>
-    <div class="project-card fade-in">
-      <div class="p-index">03</div>
-      <div class="p-icon">&#9679;</div>
-      <h3>3D 场景合成</h3>
-      <p>
-        从文本/图像到 3D 的生成式建模，
-        结合 NeRF 与扩散模型实现高质量几何与纹理生成。
-      </p>
-    </div>
-  </div>
-</section>
+    <!-- 底部行：研究模块 + 资源监控 -->
+    <div class="dashboard-row row-1-2">
+      <!-- 六边形模块 -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">&#9632; 研究模块</span>
+          <span class="panel-actions"><span class="win-ctrls"><span class="win-ctrl c1"></span><span class="win-ctrl c2"></span><span class="win-ctrl c3"></span></span></span>
+        </div>
+        <div class="panel-body">
+          <div class="hex-grid">
+            <div class="hex-item">
+              <div class="hex-icon">&#9670;</div>
+              <div class="hex-label">PCG Engine</div>
+              <div class="hex-val">v2.1.4</div>
+            </div>
+            <div class="hex-item">
+              <div class="hex-icon">&#9644;</div>
+              <div class="hex-label">Agent RT</div>
+              <div class="hex-val">v0.9.7</div>
+            </div>
+            <div class="hex-item">
+              <div class="hex-icon">&#9679;</div>
+              <div class="hex-label">3D Synth</div>
+              <div class="hex-val">v1.3.0</div>
+            </div>
+            <div class="hex-item">
+              <div class="hex-icon">&#9650;</div>
+              <div class="hex-label">Diffusion</div>
+              <div class="hex-val">v3.2.1</div>
+            </div>
+            <div class="hex-item">
+              <div class="hex-icon">&#9638;</div>
+              <div class="hex-label">VR Stack</div>
+              <div class="hex-val">v0.6.3</div>
+            </div>
+            <div class="hex-item">
+              <div class="hex-icon">&#9632;</div>
+              <div class="hex-label">Pipeline</div>
+              <div class="hex-val">v5.0.0</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-<!-- News -->
-<section id="news">
-  <p class="section-label">03 / News</p>
-  <div class="divider"></div>
-  <h2 class="section-title">最新动态</h2>
-  <ul class="news-list">
-    <li class="news-item fade-in">
-      <span class="news-date">2026.05</span>
-      <span class="news-tag">PUBLICATION</span>
-      <span class="news-title">论文 "Procedural Terrain Generation via Diffusion Models" 被 SIGGRAPH 2026 接收</span>
-      <span class="news-arrow">&rarr;</span>
-    </li>
-    <li class="news-item fade-in">
-      <span class="news-date">2026.03</span>
-      <span class="news-tag">RELEASE</span>
-      <span class="news-title">开源项目 PCG-Toolkit v1.0 发布，支持 Unity & Unreal 双引擎</span>
-      <span class="news-arrow">&rarr;</span>
-    </li>
-    <li class="news-item fade-in">
-      <span class="news-date">2025.12</span>
-      <span class="news-tag">TALK</span>
-      <span class="news-title">团队受邀在 GDC 2026 分享 "Agent-Driven NPC Behavior Synthesis"</span>
-      <span class="news-arrow">&rarr;</span>
-    </li>
-    <li class="news-item fade-in">
-      <span class="news-date">2025.09</span>
-      <span class="news-tag">COLLAB</span>
-      <span class="news-title">与东京大学联合实验室达成 AI+ACG 生成方向研究合作</span>
-      <span class="news-arrow">&rarr;</span>
-    </li>
-  </ul>
-</section>
+      <!-- 资源监控 -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">&#9632; 集群资源监控</span>
+          <span class="panel-actions">
+            <span>[ 1H ]</span>
+            <span class="win-ctrls"><span class="win-ctrl c1"></span><span class="win-ctrl c2"></span><span class="win-ctrl c3"></span></span>
+          </span>
+        </div>
+        <div class="panel-body">
+          <table class="data-table">
+            <thead>
+              <tr><th>节点</th><th>GPU</th><th>显存</th><th>CPU</th><th>RAM</th><th>温度</th><th>状态</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="id-cell">NODE-01</td>
+                <td>92% <div class="progress-bar"><div class="fill fill-orange" style="width:92%"></div></div></td>
+                <td>18.2G / 24G</td>
+                <td>64%</td>
+                <td>48G / 64G</td>
+                <td>78°C</td>
+                <td><span class="tag tag-active">ONLINE</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">NODE-02</td>
+                <td>88% <div class="progress-bar"><div class="fill fill-orange" style="width:88%"></div></div></td>
+                <td>20.1G / 24G</td>
+                <td>71%</td>
+                <td>52G / 64G</td>
+                <td>76°C</td>
+                <td><span class="tag tag-active">ONLINE</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">NODE-03</td>
+                <td>95% <div class="progress-bar"><div class="fill fill-orange" style="width:95%"></div></div></td>
+                <td>22.8G / 24G</td>
+                <td>83%</td>
+                <td>58G / 64G</td>
+                <td style="color:var(--red);">83°C</td>
+                <td><span class="tag tag-active">ONLINE</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">NODE-04</td>
+                <td>34% <div class="progress-bar"><div class="fill fill-green" style="width:34%"></div></div></td>
+                <td>9.4G / 24G</td>
+                <td>28%</td>
+                <td>22G / 64G</td>
+                <td>52°C</td>
+                <td><span class="tag tag-idle">IDLE</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-<!-- Contact / Footer -->
-<footer class="footer-section" id="contact">
-  <p class="hero-eyebrow">04 / Contact</p>
-  <h2 class="section-title">建立联系</h2>
-  <p>对研究方向感兴趣？欢迎通过以下方式联系我们。</p>
-  <div class="contact-links">
-    <a href="https://github.com/End0rph1nww" class="contact-btn" target="_blank">GitHub</a>
-    <a href="mailto:xiaofanw2002@gmail.com" class="contact-btn">Email</a>
+  </main>
+</div>
+
+<!-- ═══════════ 底部状态栏 ═══════════ -->
+<div class="bottom-bar">
+  <div>
+    <span>CONN :: SECURE</span>
+    <span style="margin-left:16px;">BANDWIDTH 2.4 Gbps</span>
+    <span style="margin-left:16px;">PKT LOSS 0.02%</span>
   </div>
-  <div class="footer-bar">
-    <span>&copy; 2026 Endorphin Studio. All rights reserved.</span>
-    <span>Powered by curiosity.</span>
+  <div>
+    <span class="blink">&#9608;</span>
+    <span style="margin-left:6px;">READY</span>
+    <span style="margin-left:24px;">ENDORPHIN LABS &copy; 2026</span>
   </div>
-</footer>
+</div>
 
 <script>
-  /* ── 导航栏滚动效果 ── */
-  const nav = document.getElementById('nav');
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 50);
-  });
+  // 模拟实时日志
+  const logList = document.querySelector('.log-list');
+  if (logList) {
+    const msgs = [
+      { cls: '', txt: '[INFO] Terrain LOD streamed for sector D3' },
+      { cls: '', txt: '[INFO] Agent <THORNS-3> spawned at waypoint 47' },
+      { cls: 'warn', txt: '[WARN] Memory pressure on NODE-03 (92%)' },
+      { cls: '', txt: '[INFO] Texture atlas compiled: 2048 textures in 0.8s' },
+      { cls: '', txt: '[INFO] API Gateway latency: 14ms (nominal)' },
+      { cls: '', txt: '[INFO] Checkpoint auto-saved: ckpt-12900.pt' },
+      { cls: 'warn', txt: '[WARN] Asset bundle size > 512MB (big_chunk_v4)' },
+      { cls: '', txt: '[INFO] Cron job <cache-cleanup> started' },
+    ];
 
-  /* ── Intersection Observer 入场动画 ── */
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
+    function now() {
+      const d = new Date();
+      return d.toTimeString().slice(0,8);
+    }
+
+    function addLog() {
+      const m = msgs[Math.floor(Math.random() * msgs.length)];
+      const li = document.createElement('li');
+      if (m.cls) li.className = m.cls;
+      li.innerHTML = `<span class="log-time">${now()}</span><span class="log-msg">${m.txt}</span>`;
+      logList.insertBefore(li, logList.firstChild);
+      // Keep max 20 entries
+      while (logList.children.length > 20) {
+        logList.removeChild(logList.lastChild);
       }
-    });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    }
 
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-  /* ── 首屏 Hero 内容立即展示 ── */
-  document.querySelector('.hero-content').classList.add('visible');
-
-  /* ── 环形装饰随鼠标轻微移动 ── */
-  const rings = document.querySelectorAll('.hero-geo .ring');
-  document.addEventListener('mousemove', (e) => {
-    const x = (e.clientX / window.innerWidth - 0.5) * 12;
-    const y = (e.clientY / window.innerHeight - 0.5) * 12;
-    rings.forEach((ring, i) => {
-      const factor = (i + 1) * 0.6;
-      ring.style.transform = `translate(calc(-50% + ${x * factor}px), calc(-55% + ${y * factor}px))`;
-    });
-  });
+    setInterval(addLog, 4000 + Math.random() * 6000);
+  }
 </script>
 </body>
 </html>
